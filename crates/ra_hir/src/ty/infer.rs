@@ -1090,7 +1090,7 @@ impl<'a, D: HirDatabase> InferenceContext<'a, D> {
                 }
 
                 if let Some(expr) = repeat {
-                    let res = self.infer_expr(
+                    self.infer_expr(
                         *expr,
                         &Expectation::has_type(Ty::simple(TypeCtor::Int(
                             primitive::UncertainIntTy::Known(primitive::IntTy::usize()),
