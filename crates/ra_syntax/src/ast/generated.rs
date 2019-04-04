@@ -78,35 +78,67 @@ impl ArgList {
     }
 }
 
-// ArrayExpr
+// ArrayListExpr
 #[derive(Debug, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct ArrayExpr {
+pub struct ArrayListExpr {
     pub(crate) syntax: SyntaxNode,
 }
-unsafe impl TransparentNewType for ArrayExpr {
+unsafe impl TransparentNewType for ArrayListExpr {
     type Repr = rowan::SyntaxNode<RaTypes>;
 }
 
-impl AstNode for ArrayExpr {
+impl AstNode for ArrayListExpr {
     fn cast(syntax: &SyntaxNode) -> Option<&Self> {
         match syntax.kind() {
-            ARRAY_EXPR => Some(ArrayExpr::from_repr(syntax.into_repr())),
+            ARRAY_LIST_EXPR => Some(ArrayListExpr::from_repr(syntax.into_repr())),
             _ => None,
         }
     }
     fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
 
-impl ToOwned for ArrayExpr {
-    type Owned = TreeArc<ArrayExpr>;
-    fn to_owned(&self) -> TreeArc<ArrayExpr> { TreeArc::cast(self.syntax.to_owned()) }
+impl ToOwned for ArrayListExpr {
+    type Owned = TreeArc<ArrayListExpr>;
+    fn to_owned(&self) -> TreeArc<ArrayListExpr> { TreeArc::cast(self.syntax.to_owned()) }
 }
 
 
-impl ArrayExpr {
-    pub fn exprs(&self) -> impl Iterator<Item = &Expr> {
+impl ArrayListExpr {
+    pub fn elements(&self) -> impl Iterator<Item = &Expr> {
         super::children(self)
+    }
+}
+
+// ArrayRepeatExpr
+#[derive(Debug, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct ArrayRepeatExpr {
+    pub(crate) syntax: SyntaxNode,
+}
+unsafe impl TransparentNewType for ArrayRepeatExpr {
+    type Repr = rowan::SyntaxNode<RaTypes>;
+}
+
+impl AstNode for ArrayRepeatExpr {
+    fn cast(syntax: &SyntaxNode) -> Option<&Self> {
+        match syntax.kind() {
+            ARRAY_REPEAT_EXPR => Some(ArrayRepeatExpr::from_repr(syntax.into_repr())),
+            _ => None,
+        }
+    }
+    fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+
+impl ToOwned for ArrayRepeatExpr {
+    type Owned = TreeArc<ArrayRepeatExpr>;
+    fn to_owned(&self) -> TreeArc<ArrayRepeatExpr> { TreeArc::cast(self.syntax.to_owned()) }
+}
+
+
+impl ArrayRepeatExpr {
+    pub fn init(&self) -> Option<&Expr> {
+        super::child_opt(self)
     }
 
     pub fn repeat(&self) -> Option<&Expr> {
@@ -697,7 +729,8 @@ unsafe impl TransparentNewType for Expr {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExprKind<'a> {
     TupleExpr(&'a TupleExpr),
-    ArrayExpr(&'a ArrayExpr),
+    ArrayRepeatExpr(&'a ArrayRepeatExpr),
+    ArrayListExpr(&'a ArrayListExpr),
     ParenExpr(&'a ParenExpr),
     PathExpr(&'a PathExpr),
     LambdaExpr(&'a LambdaExpr),
@@ -730,8 +763,13 @@ impl<'a> From<&'a TupleExpr> for &'a Expr {
         Expr::cast(&n.syntax).unwrap()
     }
 }
-impl<'a> From<&'a ArrayExpr> for &'a Expr {
-    fn from(n: &'a ArrayExpr) -> &'a Expr {
+impl<'a> From<&'a ArrayRepeatExpr> for &'a Expr {
+    fn from(n: &'a ArrayRepeatExpr) -> &'a Expr {
+        Expr::cast(&n.syntax).unwrap()
+    }
+}
+impl<'a> From<&'a ArrayListExpr> for &'a Expr {
+    fn from(n: &'a ArrayListExpr) -> &'a Expr {
         Expr::cast(&n.syntax).unwrap()
     }
 }
@@ -871,7 +909,8 @@ impl AstNode for Expr {
     fn cast(syntax: &SyntaxNode) -> Option<&Self> {
         match syntax.kind() {
             | TUPLE_EXPR
-            | ARRAY_EXPR
+            | ARRAY_REPEAT_EXPR
+            | ARRAY_LIST_EXPR
             | PAREN_EXPR
             | PATH_EXPR
             | LAMBDA_EXPR
@@ -913,7 +952,8 @@ impl Expr {
     pub fn kind(&self) -> ExprKind {
         match self.syntax.kind() {
             TUPLE_EXPR => ExprKind::TupleExpr(TupleExpr::cast(&self.syntax).unwrap()),
-            ARRAY_EXPR => ExprKind::ArrayExpr(ArrayExpr::cast(&self.syntax).unwrap()),
+            ARRAY_REPEAT_EXPR => ExprKind::ArrayRepeatExpr(ArrayRepeatExpr::cast(&self.syntax).unwrap()),
+            ARRAY_LIST_EXPR => ExprKind::ArrayListExpr(ArrayListExpr::cast(&self.syntax).unwrap()),
             PAREN_EXPR => ExprKind::ParenExpr(ParenExpr::cast(&self.syntax).unwrap()),
             PATH_EXPR => ExprKind::PathExpr(PathExpr::cast(&self.syntax).unwrap()),
             LAMBDA_EXPR => ExprKind::LambdaExpr(LambdaExpr::cast(&self.syntax).unwrap()),

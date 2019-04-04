@@ -238,15 +238,17 @@ pub enum Expr {
     Tuple {
         exprs: Vec<ExprId>,
     },
-    Array {
-        exprs: Vec<ExprId>,
-        repeat: Option<ExprId>,
-    },
+    Array(Array),
     Literal(Literal),
 }
 
 pub use ra_syntax::ast::PrefixOp as UnaryOp;
 pub use ra_syntax::ast::BinOp as BinaryOp;
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Array {
+    ElementList(Vec<ExprId>),
+    Repeat { initializer: ExprId, count: ExprId },
+}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MatchArm {
@@ -354,17 +356,17 @@ impl Expr {
                     f(*expr);
                 }
             }
-            Expr::Array { exprs, repeat } => {
-                for expr in exprs {
-                    f(*expr);
+            Expr::Array(a) => match a {
+                Array::ElementList(exprs) => {
+                    for expr in exprs {
+                        f(*expr);
+                    }
                 }
-
-                if let Some(expr) = repeat {
-                    f(*expr)
+                Array::Repeat { initializer, count } => {
+                    f(*initializer);
+                    f(*count);
                 }
-
-                
-            }
+            },
             Expr::Literal(_) => {}
         }
     }
@@ -732,10 +734,17 @@ impl ExprCollector {
                 let exprs = e.exprs().map(|expr| self.collect_expr(expr)).collect();
                 self.alloc_expr(Expr::Tuple { exprs }, syntax_ptr)
             }
-            ast::ExprKind::ArrayExpr(e) => {
-                let exprs = e.exprs().map(|expr| self.collect_expr(expr)).collect();
-                let repeat = e.repeat().map(|e| self.collect_expr(e));
-                self.alloc_expr(Expr::Array { exprs, repeat}, syntax_ptr)
+
+            ast::ExprKind::ArrayListExpr(e) => {
+                let items = e.elements().map(|expr| self.collect_expr(expr)).collect();
+                self.alloc_expr(Expr::Array(Array::ElementList(items)), syntax_ptr)
+            }
+
+            ast::ExprKind::ArrayRepeatExpr(e) => {
+                // unwrap because an array init expressions must have the init and count to be valid
+                let initializer = e.init().map(|e| self.collect_expr(e)).unwrap();
+                let count = e.repeat().map(|e| self.collect_expr(e)).unwrap();
+                self.alloc_expr(Expr::Array(Array::Repeat { initializer, count }), syntax_ptr)
             }
             ast::ExprKind::Literal(e) => {
                 let lit = match e.kind() {

@@ -163,13 +163,13 @@ fn array_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.start();
     p.bump();
     if p.eat(R_BRACK) {
-        return m.complete(p, ARRAY_EXPR);
+        return m.complete(p, ARRAY_LIST_EXPR);
     }
     expr(p);
     if p.eat(SEMI) {
         expr(p);
         p.expect(R_BRACK);
-        return m.complete(p, ARRAY_EXPR);
+        return m.complete(p, ARRAY_REPEAT_EXPR);
     }
     while !p.at(EOF) && !p.at(R_BRACK) {
         p.expect(COMMA);
@@ -183,7 +183,7 @@ fn array_expr(p: &mut Parser) -> CompletedMarker {
         expr(p);
     }
     p.expect(R_BRACK);
-    m.complete(p, ARRAY_EXPR)
+    m.complete(p, ARRAY_LIST_EXPR)
 }
 
 // test lambda_expr

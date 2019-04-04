@@ -166,7 +166,8 @@ Grammar(
 
         // atoms
         "TUPLE_EXPR",
-        "ARRAY_EXPR",
+        "ARRAY_LIST_EXPR",
+        "ARRAY_REPEAT_EXPR",
         "PAREN_EXPR",
         "PATH_EXPR",
         "LAMBDA_EXPR",
@@ -390,13 +391,14 @@ Grammar(
         "ImplItem": (
             enum: ["FnDef", "TypeAliasDef", "ConstDef"]
         ),
-
         "TupleExpr": (
             collections: [["exprs", "Expr"]]
         ),
-        "ArrayExpr": (
-            collections: [["exprs", "Expr"]],
-            options:[["repeat","Expr"]]
+        "ArrayRepeatExpr":(
+            options:[["init","Expr"],["repeat","Expr"]]
+        ),
+        "ArrayListExpr": (
+            collections: [["elements", "Expr"]],
         ),
         "ParenExpr": (options: ["Expr"]),
         "PathExpr": (options: ["Path"]),
@@ -471,7 +473,8 @@ Grammar(
         "Expr": (
             enum: [
                 "TupleExpr",
-                "ArrayExpr",
+                "ArrayRepeatExpr",
+                "ArrayListExpr",
                 "ParenExpr",
                 "PathExpr",
                 "LambdaExpr",
