@@ -1,6 +1,5 @@
 use std::ops::Index;
 use std::sync::Arc;
-
 use rustc_hash::FxHashMap;
 
 use ra_arena::{Arena, RawId, impl_arena_id, map::ArenaMap};
@@ -190,10 +189,6 @@ pub enum Expr {
         args: Vec<ExprId>,
         generic_args: Option<GenericArgs>,
     },
-    MacroCall {
-        macro_name:Name,
-        path:Option<Path>
-    },
     Match {
         expr: ExprId,
         arms: Vec<MatchArm>,
@@ -321,12 +316,6 @@ impl Expr {
                     f(*arg);
                 }
             },
-            Expr::MacroCall {..} => {
-               
-                // for arg in args {
-                //     f(*arg);
-                // }
-            }
             Expr::Match { expr, arms } => {
                 f(*expr);
                 for arm in arms {
@@ -802,20 +791,20 @@ impl ExprCollector {
             ast::ExprKind::Label(_e) => self.alloc_expr(Expr::Missing, syntax_ptr),
             ast::ExprKind::IndexExpr(_e) => self.alloc_expr(Expr::Missing, syntax_ptr),
             ast::ExprKind::RangeExpr(_e) => self.alloc_expr(Expr::Missing, syntax_ptr),
-            ast::ExprKind::MacroCall(e) => {
-                let macro_name = e.name().map(|nr| nr.as_name()).unwrap_or_else(Name::missing);
-                let path = e.path().and_then(Path::from_ast);
-                let expanded = if let Some(tt) = e.token_tree() {
+            ast::ExprKind::MacroCall(e) => { 
+              
+                if let Some(tt) = e.token_tree() {
                     if let Some((tt,_)) = mbe::ast_to_token_tree(tt) {
-                        Some(mbe::token_tree_to_ast_item_list(&tt))
+                        let items = mbe::token_tree_to_ast_item_list(&tt);
+                        self.alloc_expr(Expr::Missing, syntax_ptr)
+                       
                     }else {
-                        None
+                       self.alloc_expr(Expr::Missing, syntax_ptr)
                     }
                 }else {
-                    None
-                };
-                
-                self.alloc_expr(Expr::MacroCall{macro_name,path}, syntax_ptr)
+                    self.alloc_expr(Expr::Missing, syntax_ptr)
+                }
+               
             }
         }
     }

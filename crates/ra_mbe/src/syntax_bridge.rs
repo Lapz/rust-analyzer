@@ -31,6 +31,17 @@ pub fn token_tree_to_ast_item_list(tt: &tt::Subtree) -> TreeArc<ast::SourceFile>
     ast::SourceFile::cast(&syntax).unwrap().to_owned()
 }
 
+pub fn token_tree_to_ast_expression(tt:&tt::Subtree) -> Option<TreeArc<ast::ExprStmt>> {
+    let token_source = SubtreeTokenSource::new(tt);
+    let mut tree_sink = TtTreeSink::new(token_source.querier());
+    ra_parser::parse(&token_source, &mut tree_sink);
+    let syntax = tree_sink.inner.finish();
+
+    panic!("{:?}",syntax.kind());
+
+    ast::ExprStmt::cast(&syntax).map(|node| node.to_owned())
+}
+
 impl TokenMap {
     pub fn relative_range_of(&self, tt: tt::TokenId) -> Option<TextRange> {
         let idx = tt.0 as usize;

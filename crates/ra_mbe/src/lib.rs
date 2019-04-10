@@ -39,7 +39,7 @@ pub enum ExpandError {
     BindingError(String),
 }
 
-pub use crate::syntax_bridge::{ast_to_token_tree, token_tree_to_ast_item_list};
+pub use crate::syntax_bridge::{ast_to_token_tree, token_tree_to_ast_item_list,token_tree_to_ast_expression};
 
 /// This struct contains AST for a single `macro_rules` definition. What might
 /// be very confusing is that AST has almost exactly the same shape as
